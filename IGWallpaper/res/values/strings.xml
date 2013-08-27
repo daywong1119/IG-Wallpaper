@@ -3,6 +3,10 @@
 
     <string name="app_name">IGWallpaper</string>
     <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="livewallpaper_settings">Settings</string>
+    <string name="livewallpaper_settings_title">Select test pattern</string>
+    <string name="livewallpaper_settings_summary">		Choose which test pattern to display</string>
+    <string name="livewallpaper_movement_title">Motion</string>
+    <string name="livewallpaper_movement_summary">		Apply movement to test pattern</string>
 
 </resources>
