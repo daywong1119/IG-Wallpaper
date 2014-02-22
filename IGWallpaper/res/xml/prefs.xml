@@ -1,19 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
+    <PreferenceCategory android:title="Photo source" />
+
     <Preference
         android:key="loginInstagram"
-        android:summary="Login with Instagram"
+        android:summary="@string/login_with_instagram_desc"
         android:title="Login with Instagram" />
 
-    <CheckBoxPreference
-        android:key="touch"
-        android:title="Enable Touch" >
-    </CheckBoxPreference>
+    <PreferenceCategory android:title="Setting" />
 
-    <EditTextPreference
-        android:key="numberOfCircles"
-        android:title="Number of Circles" >
-    </EditTextPreference>
+    <Preference
+        android:key="downloadPhotos"
+        android:summary="Load images from Instagram manually, auto download is comming soon"
+        android:title="Download Images" />
+
+<!--     <EditTextPreference
+        android:defaultValue="20"
+        android:key="numberOfPhoto"
+        android:title="Number of Photo cache" >
+    </EditTextPreference> -->
+
+    <ListPreference
+        android:defaultValue="@string/wall_style_default"
+        android:dialogTitle="Select a style"
+        android:entries="@array/wall_style"
+        android:entryValues="@array/wall_style_value"
+        android:key="wallStyle"
+        android:title="Photo Wall Style" >
+    </ListPreference>
+
+    <Preference
+        android:key="gotoSetting"
+        android:title="Go to setting" />
+    
+      <Preference
+        android:key="feedback"
+        android:title="Feedback" />
+    <Preference
+        android:key="about"
+        android:title="About" />
 
 </PreferenceScreen>

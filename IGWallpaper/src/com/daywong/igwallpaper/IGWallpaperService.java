@@ -1,55 +1,76 @@
 package com.daywong.igwallpaper;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import android.content.SharedPreferences;
+import android.app.WallpaperManager;
+import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.service.wallpaper.WallpaperService;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
-public class IGWallpaperService extends WallpaperService {
+import com.daywong.igwallpaper.model.BaseApplication;
+import com.daywong.igwallpaper.model.ImageLooper;
 
+/*
+ * Main Program for IG Photowall
+ * */
+public class IGWallpaperService extends WallpaperService {
 	@Override
 	public Engine onCreateEngine() {
 		return new MyWallpaperEngine();
 	}
 
 	private class MyWallpaperEngine extends Engine {
+		private static final String TAG = "Service";
+		private BaseApplication app = (BaseApplication) getApplicationContext();
+		private int width;
+		private int height;
+		private boolean visible = true;
+		private boolean touchEnabled;
+		private ImageLooper imgloop;
+		Context mContext;
+		private final Handler autoUpdateHandle = new Handler();
+		private final Runnable autoUpdateRunner = new Runnable() {
+			@Override
+			public void run() {
+				Log.d(TAG, "Auto Update runs");
+//				autoUpdateHandle.postDelayed(autoUpdateRunner, 1000);
+			}
+		};
+
 		private final Handler handler = new Handler();
 		private final Runnable drawRunner = new Runnable() {
 			@Override
 			public void run() {
 				draw();
 			}
-
 		};
-		private List<MyPoint> circles;
-		private Paint paint = new Paint();
-		private int width;
-		int height;
-		private boolean visible = true;
-		private int maxNumber;
-		private boolean touchEnabled;
+		private final Runnable errorRunner = new Runnable() {
+			@Override
+			public void run() {
+				drawErrorMessage();
+			}
+		};
 
 		public MyWallpaperEngine() {
-			SharedPreferences prefs = PreferenceManager
-					.getDefaultSharedPreferences(IGWallpaperService.this);
-			maxNumber = Integer
-					.valueOf(prefs.getString("numberOfCircles", "4"));
-			touchEnabled = prefs.getBoolean("touch", false);
-			circles = new ArrayList<MyPoint>();
-			paint.setAntiAlias(true);
-			paint.setColor(Color.WHITE);
-			paint.setStyle(Paint.Style.STROKE);
-			paint.setStrokeJoin(Paint.Join.ROUND);
-			paint.setStrokeWidth(10f);
-			handler.post(drawRunner);
+			Log.d(TAG, "MyWallpaperEngine created");
+			// SharedPreferences prefs =
+			// PreferenceManager.getDefaultSharedPreferences(IGWallpaperService.this);
+			// touchEnabled = prefs.getBoolean("touch", false);
+			mContext = IGWallpaperService.this.getApplicationContext();
+			WallpaperManager mWM = WallpaperManager.getInstance(mContext);
+			width = mWM.getDesiredMinimumWidth();
+			height = mWM.getDesiredMinimumHeight();
+			if (BaseApplication.cachePhotoCount(app.getPref_wallStyle()) > 1) {
+				imgloop = new ImageLooper(width, height, getApplicationContext());
+				handler.post(drawRunner);
+				autoUpdateHandle.postDelayed(autoUpdateRunner, 1000);
+			} else {
+				handler.post(errorRunner);
+			}
 		}
 
 		@Override
@@ -79,28 +100,68 @@ public class IGWallpaperService extends WallpaperService {
 
 		@Override
 		public void onTouchEvent(MotionEvent event) {
-			if (touchEnabled) {
+			// if (touchEnabled) {
+			//
+			// float x = event.getX();
+			// float y = event.getY();
+			// SurfaceHolder holder = getSurfaceHolder();
+			// Canvas canvas = null;
+			// try {
+			// canvas = holder.lockCanvas();
+			// if (canvas != null) {
+			// drawImage(canvas,x,y);
+			// }
+			// } finally {
+			// if (canvas != null)
+			// holder.unlockCanvasAndPost(canvas);
+			// }
+			// super.onTouchEvent(event);
+			// }
+		}
 
-				float x = event.getX();
-				float y = event.getY();
-				SurfaceHolder holder = getSurfaceHolder();
-				Canvas canvas = null;
-				try {
-					canvas = holder.lockCanvas();
-					if (canvas != null) {
-						canvas.drawColor(Color.BLACK);
-						circles.clear();
-						circles.add(new MyPoint(
-								String.valueOf(circles.size() + 1), (int)x, (int)y));
-						drawCircles(canvas, circles);
+		private void drawErrorMessage() {
+			SurfaceHolder holder = getSurfaceHolder();
+			Canvas canvas = null;
+			try {
+				canvas = holder.lockCanvas();
+				if (canvas != null) {
+					Paint p = new Paint();
+					p.setTextSize(80);
+					p.setColor(Color.WHITE);
+					canvas.drawText(
+							(String) getResources().getText(R.string.app_name),
+							0, canvas.getHeight() / 2 - 300, p);
+					p.setTextSize(30);
+					canvas.drawText(
+							(String) getResources().getText(
+									R.string.no_image_mesage1), 0,
+							canvas.getHeight() / 2, p);
+					p.setColor(Color.CYAN);
+					canvas.drawText(
+							(String) getResources().getText(
+									R.string.no_image_mesage2), 0,
+							canvas.getHeight() / 2 + 30, p);
+					p.setColor(Color.GREEN);
+					canvas.drawText(
+							(String) getResources().getText(
+									R.string.no_image_mesage3), 0,
+							canvas.getHeight() / 2 + 60, p);
+					p.setColor(Color.YELLOW);
+					canvas.drawText(
+							(String) getResources().getText(
+									R.string.no_image_mesage4), 0,
+							canvas.getHeight() / 2 + 90, p);
 
+					handler.removeCallbacks(drawRunner);
+					if (visible) {
+						handler.postDelayed(drawRunner, 2000);
 					}
-				} finally {
-					if (canvas != null)
-						holder.unlockCanvasAndPost(canvas);
 				}
-				super.onTouchEvent(event);
+			} finally {
+				if (canvas != null)
+					holder.unlockCanvasAndPost(canvas);
 			}
+			handler.removeCallbacks(drawRunner);
 		}
 
 		private void draw() {
@@ -109,14 +170,7 @@ public class IGWallpaperService extends WallpaperService {
 			try {
 				canvas = holder.lockCanvas();
 				if (canvas != null) {
-					if (circles.size() >= maxNumber) {
-						circles.clear();
-					}
-					int x = (int) (width * Math.random());
-					int y = (int) (height * Math.random());
-					circles.add(new MyPoint(String.valueOf(circles.size() + 1),
-							x, y));
-					drawCircles(canvas, circles);
+					imgloop.drawPhotos(canvas);
 				}
 			} finally {
 				if (canvas != null)
@@ -124,15 +178,7 @@ public class IGWallpaperService extends WallpaperService {
 			}
 			handler.removeCallbacks(drawRunner);
 			if (visible) {
-				handler.postDelayed(drawRunner, 5000);
-			}
-		}
-
-		// Surface view requires that all elements are drawn completely
-		private void drawCircles(Canvas canvas, List<MyPoint> circles) {
-			canvas.drawColor(Color.BLACK);
-			for (MyPoint point : circles) {
-				canvas.drawCircle(point.getX(), point.getY(), 20.0f, paint);
+				handler.postDelayed(drawRunner, 25);
 			}
 		}
 	}
