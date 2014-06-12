@@ -13,6 +13,7 @@ import android.view.SurfaceHolder;
 
 import com.daywong.igwallpaper.model.BaseApplication;
 import com.daywong.igwallpaper.model.ImageLooper;
+import com.daywong.igwallpaper.model.ImageWall;
 
 /*
  * Main Program for IG Photowall
@@ -25,11 +26,14 @@ public class IGWallpaperService extends WallpaperService {
 
 	private class MyWallpaperEngine extends Engine {
 		private static final String TAG = "Service";
+		private static final long DRAW_INTERVAL = 10000;
 		private BaseApplication app = (BaseApplication) getApplicationContext();
 		private int width;
 		private int height;
 		private boolean visible = true;
-		private boolean touchEnabled;
+		private boolean touchEnabled = true;
+		
+//		private ImageLooper imgloop;
 		private ImageLooper imgloop;
 		Context mContext;
 		private final Handler autoUpdateHandle = new Handler();
@@ -57,17 +61,15 @@ public class IGWallpaperService extends WallpaperService {
 
 		public MyWallpaperEngine() {
 			Log.d(TAG, "MyWallpaperEngine created");
-			// SharedPreferences prefs =
-			// PreferenceManager.getDefaultSharedPreferences(IGWallpaperService.this);
-			// touchEnabled = prefs.getBoolean("touch", false);
 			mContext = IGWallpaperService.this.getApplicationContext();
 			WallpaperManager mWM = WallpaperManager.getInstance(mContext);
 			width = mWM.getDesiredMinimumWidth();
 			height = mWM.getDesiredMinimumHeight();
 			if (BaseApplication.cachePhotoCount(app.getPref_wallStyle()) > 1) {
 				imgloop = new ImageLooper(width, height, getApplicationContext());
+//				imgloop = new ImageWall();
 				handler.post(drawRunner);
-				autoUpdateHandle.postDelayed(autoUpdateRunner, 1000);
+				autoUpdateHandle.postDelayed(autoUpdateRunner, 100);
 			} else {
 				handler.post(errorRunner);
 			}
@@ -100,23 +102,22 @@ public class IGWallpaperService extends WallpaperService {
 
 		@Override
 		public void onTouchEvent(MotionEvent event) {
-			// if (touchEnabled) {
-			//
-			// float x = event.getX();
-			// float y = event.getY();
-			// SurfaceHolder holder = getSurfaceHolder();
-			// Canvas canvas = null;
-			// try {
-			// canvas = holder.lockCanvas();
-			// if (canvas != null) {
-			// drawImage(canvas,x,y);
-			// }
-			// } finally {
-			// if (canvas != null)
-			// holder.unlockCanvasAndPost(canvas);
-			// }
-			// super.onTouchEvent(event);
-			// }
+//			 if (touchEnabled) {
+//			 float x = event.getX();
+//			 float y = event.getY();
+//			 SurfaceHolder holder = getSurfaceHolder();
+//			 Canvas canvas = null;
+//			 try {
+////				canvas = holder.lockCanvas();
+//				if (canvas != null) {
+//			 		imgloop.onTouch(x,y,canvas);
+//				 }
+//			 } finally {
+//			 if (canvas != null)
+////			 holder.unlockCanvasAndPost(canvas);
+//			 }
+//			 super.onTouchEvent(event);
+//			 }
 		}
 
 		private void drawErrorMessage() {
@@ -128,29 +129,15 @@ public class IGWallpaperService extends WallpaperService {
 					Paint p = new Paint();
 					p.setTextSize(80);
 					p.setColor(Color.WHITE);
-					canvas.drawText(
-							(String) getResources().getText(R.string.app_name),
-							0, canvas.getHeight() / 2 - 300, p);
+					canvas.drawText((String) getResources().getText(R.string.app_name),0, canvas.getHeight() / 2 - 300, p);
 					p.setTextSize(30);
-					canvas.drawText(
-							(String) getResources().getText(
-									R.string.no_image_mesage1), 0,
-							canvas.getHeight() / 2, p);
+					canvas.drawText((String) getResources().getText(R.string.no_image_mesage1), 0,canvas.getHeight() / 2, p);
 					p.setColor(Color.CYAN);
-					canvas.drawText(
-							(String) getResources().getText(
-									R.string.no_image_mesage2), 0,
-							canvas.getHeight() / 2 + 30, p);
+					canvas.drawText((String) getResources().getText(R.string.no_image_mesage2), 0,canvas.getHeight() / 2 + 30, p);
 					p.setColor(Color.GREEN);
-					canvas.drawText(
-							(String) getResources().getText(
-									R.string.no_image_mesage3), 0,
-							canvas.getHeight() / 2 + 60, p);
+					canvas.drawText((String) getResources().getText(R.string.no_image_mesage3), 0,canvas.getHeight() / 2 + 60, p);
 					p.setColor(Color.YELLOW);
-					canvas.drawText(
-							(String) getResources().getText(
-									R.string.no_image_mesage4), 0,
-							canvas.getHeight() / 2 + 90, p);
+					canvas.drawText((String) getResources().getText(R.string.no_image_mesage4), 0,canvas.getHeight() / 2 + 90, p);
 
 					handler.removeCallbacks(drawRunner);
 					if (visible) {
@@ -178,7 +165,7 @@ public class IGWallpaperService extends WallpaperService {
 			}
 			handler.removeCallbacks(drawRunner);
 			if (visible) {
-				handler.postDelayed(drawRunner, 25);
+				handler.postDelayed(drawRunner, DRAW_INTERVAL);
 			}
 		}
 	}
