@@ -40,8 +40,7 @@ public class ImageLoaderClass implements Runnable {
 				URL url = new URL(mList.get(x));
 				Log.d(TAG, " current Url is" + url.toString());
 				input = url.openStream();
-				OutputStream output = new FileOutputStream(new File(mSaveTo,
-						"cache_" + x));
+				OutputStream output = new FileOutputStream(new File(mSaveTo,"cache_" + x));
 				try {
 					byte[] buffer = new byte[128];
 					int bytesRead = 0;

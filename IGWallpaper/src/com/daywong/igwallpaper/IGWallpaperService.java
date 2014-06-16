@@ -14,6 +14,7 @@ import android.view.SurfaceHolder;
 import com.daywong.igwallpaper.model.BaseApplication;
 import com.daywong.igwallpaper.model.ImageLooper;
 import com.daywong.igwallpaper.model.ImageWall;
+import com.daywong.igwallpaper.model.KenBurnEffectWall;
 
 /*
  * Main Program for IG Photowall
@@ -26,7 +27,7 @@ public class IGWallpaperService extends WallpaperService {
 
 	private class MyWallpaperEngine extends Engine {
 		private static final String TAG = "Service";
-		private static final long DRAW_INTERVAL = 10000;
+		private static final long DRAW_INTERVAL = 50;
 		private BaseApplication app = (BaseApplication) getApplicationContext();
 		private int width;
 		private int height;
@@ -34,7 +35,7 @@ public class IGWallpaperService extends WallpaperService {
 		private boolean touchEnabled = true;
 		
 //		private ImageLooper imgloop;
-		private ImageLooper imgloop;
+		private KenBurnEffectWall imgloop;
 		Context mContext;
 		private final Handler autoUpdateHandle = new Handler();
 		private final Runnable autoUpdateRunner = new Runnable() {
@@ -66,7 +67,8 @@ public class IGWallpaperService extends WallpaperService {
 			width = mWM.getDesiredMinimumWidth();
 			height = mWM.getDesiredMinimumHeight();
 			if (BaseApplication.cachePhotoCount(app.getPref_wallStyle()) > 1) {
-				imgloop = new ImageLooper(width, height, getApplicationContext());
+				imgloop = new KenBurnEffectWall(getApplicationContext());
+//				imgloop = new ImageLooper(width, height, getApplicationContext());
 //				imgloop = new ImageWall();
 				handler.post(drawRunner);
 				autoUpdateHandle.postDelayed(autoUpdateRunner, 100);
@@ -141,7 +143,7 @@ public class IGWallpaperService extends WallpaperService {
 
 					handler.removeCallbacks(drawRunner);
 					if (visible) {
-						handler.postDelayed(drawRunner, 2000);
+						handler.postDelayed(drawRunner, 100);
 					}
 				}
 			} finally {

@@ -1,26 +1,38 @@
 package com.daywong.igwallpaper;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.Random;
+
+import android.app.Activity;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
-import android.preference.PreferenceActivity;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.daywong.igwallpaper.model.BaseApplication;
+import com.luminous.pick.Action;
+import com.luminous.pick.CustomGallery;
 import com.parse.Parse;
 import com.parse.ParseAnalytics;
 import com.parse.ParseException;
 import com.parse.ParseInstallation;
 import com.parse.ParseUser;
 
-public class UserPreferenceActivity extends PreferenceActivity {
+public class UserPreferenceActivity extends BasePreferenceActivity {
 	private static final String TAG = "UserPreferenceActivity";
-	private final int TOKEN_URL_CODE = 999;
+	private static final int IMAGE_PICKER_SELECT = 20392;
+	private static final int TOKEN_URL_CODE = 999;
+	private Context mContext = this;
 	public String token_url;
 	private BaseApplication app;
 	private Preference photoPref;
@@ -30,12 +42,13 @@ public class UserPreferenceActivity extends PreferenceActivity {
 		super.onCreate(savedInstanceState);
 		// init
 		Log.d(TAG, "UserPreferenceActivity OnCreate");
-		Parse.initialize(this, "KtYxWalxiCNFxdc7LcPjuPqMlXGLFS6FwELx69Hv",
-				"4GYXO1FGfiphAmn4RdsTKyuWoCxT3FERGUg2auPT");
+		Parse.initialize(this, "KtYxWalxiCNFxdc7LcPjuPqMlXGLFS6FwELx69Hv","4GYXO1FGfiphAmn4RdsTKyuWoCxT3FERGUg2auPT");
 		ParseAnalytics.trackAppOpened(getIntent());
 		addPreferencesFromResource(R.xml.prefs);
 		app = (BaseApplication) getApplicationContext();
-		app.createFloderIfneeded();
+//		app.createFloderIfneeded();//for ig wallpaper
+		createFolderifNeeded();//for Gridwall
+		
 		// autoLogin();
 
 		// retrieve parse data
@@ -88,11 +101,9 @@ public class UserPreferenceActivity extends PreferenceActivity {
 			// + BaseApplication.USER_MAX_PHOTO);
 			Preference gotoSetting = findPreference("gotoSetting");
 			gotoSetting.setOnPreferenceClickListener(gotoSettingListener);
-			Preference stylePref = getPreferenceScreen().findPreference(
-					"wallStyle");
+			Preference stylePref = getPreferenceScreen().findPreference("wallStyle");
 			stylePref.setOnPreferenceChangeListener(photowallStyleListener);
-			Preference feedbackPref = getPreferenceScreen()
-					.findPreference("feedback");
+			Preference feedbackPref = getPreferenceScreen().findPreference("feedback");
 			feedbackPref.setOnPreferenceClickListener(feedbackListener);
 			Preference aboutPref = getPreferenceScreen()
 					.findPreference("about");
@@ -103,26 +114,64 @@ public class UserPreferenceActivity extends PreferenceActivity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		switch (requestCode) {
-		case TOKEN_URL_CODE:
-			if (resultCode == RESULT_OK) {
-				Bundle extras = data.getExtras();
-				token_url = extras.getString("token_url");
-				// go Step 2 ; Load user images
-				Intent i = new Intent(getApplicationContext(),
-						GetInstagramMediaActivity.class);
-				i.putExtra("token_url", token_url);
-				startActivity(i);
+		// if (requestCode == 100 && resultCode == Activity.RESULT_OK) {
+		// adapter.clear();
+		//
+		// viewSwitcher.setDisplayedChild(1);
+		// String single_path = data.getStringExtra("single_path");
+		// imageLoader.displayImage("file://" + single_path, imgSinglePick);
+		//
+		// } else
+		if (requestCode == 200 && resultCode == Activity.RESULT_OK) {
+			String[] all_path = data.getStringArrayExtra("all_path");
+
+			ArrayList<CustomGallery> dataT = new ArrayList<CustomGallery>();
+
+			for (String string : all_path) {
+				CustomGallery item = new CustomGallery();
+				item.sdcardPath = string;
+				dataT.add(item);
+				Log.d(TAG, TAG + " selected file path = " + string);
+				saveBitmapToSD(string);
+				BaseSaveSettingToSP(Gvar.SP_IMAGE, string );
 			}
-			break;
 		}
 	}
+
+
+	private void saveBitmapToSD(String string) {
+		Log.d(TAG, TAG + " saveBitmapToSD file name = " + string);
+		File f = new File(string);
+		if (!f.exists()) 
+			return;
+		
+		Options option = new Options();
+		option.inScaled = false;
+		Bitmap b = BitmapFactory.decodeFile(string, option);
+//		Bitmap scaleImg = Bitmap.createScaledBitmap(b, 600, 600, true);
+		
+		Random generator = new Random();
+		int n = 10000;
+		n = generator.nextInt(n);
+		String fname = "Image-"+ n +".jpg";
+		File file = new File (Gvar.APP_ASSET_FULLPATH, fname);
+		if (file.exists ()) file.delete (); 
+		try {
+		       FileOutputStream out = new FileOutputStream(file);
+		       b.compress(Bitmap.CompressFormat.JPEG, 100, out);
+		       out.flush();
+		       out.close();
+		} catch (Exception e) {
+		       e.printStackTrace();
+		}
+	}
+
 
 	OnPreferenceClickListener loginInstagranListener = new OnPreferenceClickListener() {
 		@Override
 		public boolean onPreferenceClick(Preference preference) {
-			startActivityForResult(new Intent(getApplicationContext(),
-					LoginInstagramActivity.class), TOKEN_URL_CODE);
+			Intent i = new Intent(Action.ACTION_MULTIPLE_PICK);
+			startActivityForResult(i, 200);
 			return false;
 		}
 	};
@@ -166,6 +215,19 @@ public class UserPreferenceActivity extends PreferenceActivity {
 			return false;
 		}
 	};
+
+	private void createFolderifNeeded() {
+		File f = new File(Gvar.APP_ASSET_FULLPATH);
+		if (!f.exists()){
+			boolean result = f.mkdirs();
+			if(Gvar.DEBUG)
+				Log.d(TAG,TAG+" app folder creating, result =" + result);
+		}else{
+			if(Gvar.DEBUG)
+				Log.d(TAG,TAG+" app folder is existing");
+		}
+	}
+
 	public void autoLogin() {
 		TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
 		final String IMEI = tm.getDeviceId();
@@ -173,6 +235,7 @@ public class UserPreferenceActivity extends PreferenceActivity {
 			try {
 				Log.d(TAG, "Login user IMEI" + IMEI);
 				ParseUser.logIn(IMEI, IMEI);
+
 			} catch (ParseException e) {
 				e.printStackTrace();
 			}
@@ -190,5 +253,6 @@ public class UserPreferenceActivity extends PreferenceActivity {
 				}
 			}
 		}
+
 	}
 }
